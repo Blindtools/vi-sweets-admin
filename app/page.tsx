@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { User } from 'firebase/auth';
 import type { RemoteSnapshot } from '@/lib/remote-assets';
 import { ModuleWorkspace } from '@/app/components/module-workspace';
+import { LoginGate } from '@/app/components/login-gate';
 
 type Module = {
   id: string;
@@ -31,6 +33,10 @@ function ModuleIcon({ icon }: { icon: string }) {
 }
 
 export default function AdminHome() {
+  return <LoginGate>{(user) => <AdminWorkspace user={user} />}</LoginGate>;
+}
+
+function AdminWorkspace({ user }: { user: User }) {
   const [active, setActive] = useState('overview');
   const [search, setSearch] = useState('');
   const [snapshot, setSnapshot] = useState<RemoteSnapshot | null>(null);
@@ -71,7 +77,7 @@ export default function AdminHome() {
 
       <section className="content">
         <header className="topbar"><div><span className="eyebrow">VI SWEETS / {selected.group.toUpperCase()}</span><h1>{selected.label}</h1></div><div className="top-actions"><button className="quiet-button">⌁ Activity</button><button className="primary-button">＋ New update</button></div></header>
-        {active === 'overview' ? <Overview onSelect={setActive} snapshot={snapshot} /> : <ModuleWorkspace id={selected.id} snapshot={snapshot} />}
+        {active === 'overview' ? <Overview onSelect={setActive} snapshot={snapshot} /> : <ModuleWorkspace id={selected.id} snapshot={snapshot} user={user} />}
       </section>
     </main>
   );
