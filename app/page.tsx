@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { RemoteSnapshot } from '@/lib/remote-assets';
 
 type Module = {
   id: string;
@@ -31,7 +32,14 @@ function ModuleIcon({ icon }: { icon: string }) {
 export default function AdminHome() {
   const [active, setActive] = useState('overview');
   const [search, setSearch] = useState('');
+  const [snapshot, setSnapshot] = useState<RemoteSnapshot | null>(null);
   const selected = modules.find((module) => module.id === active) ?? modules[0];
+  useEffect(() => {
+    fetch('/api/remote-assets')
+      .then((response) => response.ok ? response.json() as Promise<RemoteSnapshot> : null)
+      .then((data) => { if (data) setSnapshot(data); })
+      .catch(() => undefined);
+  }, []);
   const groups = useMemo(() => {
     const filtered = modules.filter((module) => module.label.toLowerCase().includes(search.toLowerCase()));
     return filtered.reduce<Record<string, Module[]>>((result, module) => {
@@ -62,16 +70,16 @@ export default function AdminHome() {
 
       <section className="content">
         <header className="topbar"><div><span className="eyebrow">VI SWEETS / {selected.group.toUpperCase()}</span><h1>{selected.label}</h1></div><div className="top-actions"><button className="quiet-button">⌁ Activity</button><button className="primary-button">＋ New update</button></div></header>
-        {active === 'overview' ? <Overview onSelect={setActive} /> : <ModuleView module={selected} />}
+        {active === 'overview' ? <Overview onSelect={setActive} snapshot={snapshot} /> : <ModuleView module={selected} snapshot={snapshot} />}
       </section>
     </main>
   );
 }
 
-function Overview({ onSelect }: { onSelect: (id: string) => void }) {
+function Overview({ onSelect, snapshot }: { onSelect: (id: string) => void; snapshot: RemoteSnapshot | null }) {
   return <div className="page-stack">
     <section className="hero-card"><div><span className="eyebrow light">GOOD EVENING, ADMIN</span><h2>Keep every game feeling fresh.</h2><p>Manage remote sounds, shop content, player communication, and live operations from one calm workspace.</p><button className="light-button" onClick={() => onSelect('sounds')}>Open sound library <span>→</span></button></div><div className="hero-orbit"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="orbit-core">✦</div></div></section>
-    <div className="stat-grid"><Stat label="Registered players" value="—" note="Connect Firebase to load" /><Stat label="Remote sounds" value="—" note="GitHub manifest pending" /><Stat label="Unread alerts" value="3" note="Needs review" accent="orange" /><Stat label="System status" value="Ready" note="Remote integrations pending" accent="green" /></div>
+    <div className="stat-grid"><Stat label="Registered players" value="—" note="Firebase integration pending" /><Stat label="Remote sounds" value={String(Object.values(snapshot?.sounds ?? {}).reduce((total, game) => total + Object.keys(game).length, 0))} note={snapshot ? 'GitHub manifest connected' : 'Loading GitHub manifest'} /><Stat label="Unread alerts" value={String(snapshot?.notifications.length ?? 0)} note={snapshot ? 'Remote feed connected' : 'Loading notification feed'} accent="orange" /><Stat label="System status" value={snapshot ? 'Connected' : 'Ready'} note={snapshot ? `Synced ${new Date(snapshot.fetchedAt).toLocaleTimeString()}` : 'Remote integrations loading'} accent="green" /></div>
     <div className="split-grid"><section className="panel"><div className="panel-heading"><div><span className="eyebrow">QUICK ACTIONS</span><h3>Make a change</h3></div><span className="panel-kicker">4 common tasks</span></div><div className="action-grid"><Action icon="♫" title="Upload a sound" text="Publish a versioned game sound" onClick={() => onSelect('sounds')} /><Action icon="◇" title="Edit shop" text="Change price or button label" onClick={() => onSelect('shop')} /><Action icon="✦" title="Send update" text="Create an in-app announcement" onClick={() => onSelect('notifications')} /><Action icon="✎" title="Edit content" text="Update onboarding or help" onClick={() => onSelect('content')} /></div></section><section className="panel"><div className="panel-heading"><div><span className="eyebrow">RECENT ACTIVITY</span><h3>Nothing connected yet</h3></div><span className="panel-kicker">Live</span></div><div className="empty-state"><div className="empty-icon">◌</div><p>Once integrations are connected, changes and admin actions will appear here.</p></div></section></div>
     <section className="panel checklist"><div><span className="eyebrow">SETUP PROGRESS</span><h3>Finish your control room</h3></div><div className="progress-track"><span /></div><div className="check-row"><span className="check pending">1</span><div><strong>Connect remote assets</strong><p>GitHub sound repository and manifest</p></div><button onClick={() => onSelect('sounds')}>Open →</button></div><div className="check-row"><span className="check pending">2</span><div><strong>Connect app data</strong><p>Firebase and Supabase remain server-side only</p></div><button onClick={() => onSelect('settings')}>Review →</button></div></section>
   </div>;
@@ -79,4 +87,4 @@ function Overview({ onSelect }: { onSelect: (id: string) => void }) {
 
 function Stat({ label, value, note, accent = '' }: { label: string; value: string; note: string; accent?: string }) { return <div className={`stat-card ${accent}`}><span>{label}</span><strong>{value}</strong><small>{note}</small></div>; }
 function Action({ icon, title, text, onClick }: { icon: string; title: string; text: string; onClick: () => void }) { return <button className="action-card" onClick={onClick}><span className="action-icon">{icon}</span><span><strong>{title}</strong><small>{text}</small></span><b>→</b></button>; }
-function ModuleView({ module }: { module: Module }) { return <div className="module-placeholder"><div className="large-module-icon"><ModuleIcon icon={module.icon} /></div><span className="eyebrow">{module.group.toUpperCase()}</span><h2>{module.label}</h2><p>{module.description}</p><div className="integration-note"><span>✦</span><div><strong>UI is ready for integration</strong><small>This module will connect through protected server actions. No Firebase private keys, Supabase service keys, or GitHub tokens are stored in the browser.</small></div></div><button className="primary-button">Configure integration</button></div>; }
+function ModuleView({ module, snapshot }: { module: Module; snapshot: RemoteSnapshot | null }) { return <div className="module-placeholder"><div className="large-module-icon"><ModuleIcon icon={module.icon} /></div><span className="eyebrow">{module.group.toUpperCase()}</span><h2>{module.label}</h2><p>{module.description}</p>{module.id === 'sounds' && <div className="data-preview"><strong>{Object.keys(snapshot?.sounds ?? {}).length} games in manifest</strong><small>Remote sound manifest is being read from the public GitHub asset repository. Upload and publishing actions will be protected server-side.</small></div>}{module.id === 'notifications' && <div className="data-preview"><strong>{snapshot?.notifications.length ?? 0} announcements available</strong><small>In-app notification feed is connected read-only. Publishing will require an authenticated server action.</small></div>}<div className="integration-note"><span>✦</span><div><strong>Integration boundary is protected</strong><small>No Firebase private keys, Supabase service keys, or GitHub tokens are stored in the browser. Privileged writes will use server-side secrets.</small></div></div><button className="primary-button">Configure integration</button></div>; }
