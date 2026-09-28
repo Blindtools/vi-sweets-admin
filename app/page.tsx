@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { RemoteSnapshot } from '@/lib/remote-assets';
+import { ModuleWorkspace } from '@/app/components/module-workspace';
 
 type Module = {
   id: string;
@@ -70,7 +71,7 @@ export default function AdminHome() {
 
       <section className="content">
         <header className="topbar"><div><span className="eyebrow">VI SWEETS / {selected.group.toUpperCase()}</span><h1>{selected.label}</h1></div><div className="top-actions"><button className="quiet-button">⌁ Activity</button><button className="primary-button">＋ New update</button></div></header>
-        {active === 'overview' ? <Overview onSelect={setActive} snapshot={snapshot} /> : <ModuleView module={selected} snapshot={snapshot} />}
+        {active === 'overview' ? <Overview onSelect={setActive} snapshot={snapshot} /> : <ModuleWorkspace id={selected.id} snapshot={snapshot} />}
       </section>
     </main>
   );
@@ -87,4 +88,3 @@ function Overview({ onSelect, snapshot }: { onSelect: (id: string) => void; snap
 
 function Stat({ label, value, note, accent = '' }: { label: string; value: string; note: string; accent?: string }) { return <div className={`stat-card ${accent}`}><span>{label}</span><strong>{value}</strong><small>{note}</small></div>; }
 function Action({ icon, title, text, onClick }: { icon: string; title: string; text: string; onClick: () => void }) { return <button className="action-card" onClick={onClick}><span className="action-icon">{icon}</span><span><strong>{title}</strong><small>{text}</small></span><b>→</b></button>; }
-function ModuleView({ module, snapshot }: { module: Module; snapshot: RemoteSnapshot | null }) { return <div className="module-placeholder"><div className="large-module-icon"><ModuleIcon icon={module.icon} /></div><span className="eyebrow">{module.group.toUpperCase()}</span><h2>{module.label}</h2><p>{module.description}</p>{module.id === 'sounds' && <div className="data-preview"><strong>{Object.keys(snapshot?.sounds ?? {}).length} games in manifest</strong><small>Remote sound manifest is being read from the public GitHub asset repository. Upload and publishing actions will be protected server-side.</small></div>}{module.id === 'notifications' && <div className="data-preview"><strong>{snapshot?.notifications.length ?? 0} announcements available</strong><small>In-app notification feed is connected read-only. Publishing will require an authenticated server action.</small></div>}<div className="integration-note"><span>✦</span><div><strong>Integration boundary is protected</strong><small>No Firebase private keys, Supabase service keys, or GitHub tokens are stored in the browser. Privileged writes will use server-side secrets.</small></div></div><button className="primary-button">Configure integration</button></div>; }
