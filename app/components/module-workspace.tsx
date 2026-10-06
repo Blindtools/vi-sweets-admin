@@ -6,7 +6,7 @@ import type { RemoteSnapshot } from '@/lib/remote-assets';
 
 type Props = { id: string; snapshot: RemoteSnapshot | null; user: User };
 
-export function ModuleWorkspace({ id, snapshot }: Props) {
+export function ModuleWorkspace({ id, snapshot, user }: Props) {
   if (id === 'sounds') return <SoundsModule snapshot={snapshot} user={user} />;
   if (id === 'shop') return <ShopModule snapshot={snapshot} user={user} />;
   if (id === 'notifications') return <NotificationsModule snapshot={snapshot} user={user} />;
@@ -53,7 +53,7 @@ function NotificationsModule({ snapshot, user }: { snapshot: RemoteSnapshot | nu
 }
 
 function ContentModule({ snapshot }: { snapshot: RemoteSnapshot | null }) { return <div className="module-workspace"><ModuleHeader eyebrow="ENGAGEMENT" title="Content editor" description="Remote settings and public copy will live in versioned JSON." action="New content" /><div className="content-list"><ContentRow title="App settings" value={Object.keys(snapshot?.settings ?? {}).length ? 'Connected' : 'Empty'} /><ContentRow title="Notifications feed" value={`${snapshot?.notifications.length ?? 0} entries`} /><ContentRow title="Shop catalog" value={snapshot?.shop?.catalog_version ? `v${snapshot.shop.catalog_version}` : 'Not published'} /></div><Notice text="Draft editing is local until the protected GitHub publish action is configured." /></div>; }
-function GenericModule({ id, snapshot }: Props) { return <div className="module-workspace"><ModuleHeader eyebrow="OPERATIONS" title={id.replaceAll('_', ' ')} description="This workspace is mapped to the existing VI Sweets admin capability and is ready for its protected data adapter." action="Configure" /><div className="integration-note"><span>✦</span><div><strong>Existing data remains unchanged</strong><small>Firebase user/admin data and Supabase voice/chat data will be accessed through role-checked adapters. Nothing is migrated automatically.</small></div></div><div className="metric-row"><span>Remote snapshot</span><strong>{snapshot ? 'Connected' : 'Waiting'}</strong></div></div>; }
+function GenericModule({ id, snapshot }: Pick<Props, 'id' | 'snapshot'>) { return <div className="module-workspace"><ModuleHeader eyebrow="OPERATIONS" title={id.replaceAll('_', ' ')} description="This workspace is mapped to the existing VI Sweets admin capability and is ready for its protected data adapter." action="Configure" /><div className="integration-note"><span>✦</span><div><strong>Existing data remains unchanged</strong><small>Firebase user/admin data and Supabase voice/chat data will be accessed through role-checked adapters. Nothing is migrated automatically.</small></div></div><div className="metric-row"><span>Remote snapshot</span><strong>{snapshot ? 'Connected' : 'Waiting'}</strong></div></div>; }
 function ModuleHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action: string }) { return <div className="module-header"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div><button className="primary-button">＋ {action}</button></div>; }
 function Notice({ text }: { text: string }) { return <div className="small-notice"><span>i</span><small>{text}</small></div>; }
 function Empty({ text }: { text: string }) { return <div className="empty-module">{text}</div>; }
